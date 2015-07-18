@@ -10,6 +10,7 @@ require 'sinatra/base'
 require 'digest'
 require 'uri'
 require 'net/http'
+require 'net/https'
 
 module Yarp
   class App < Sinatra::Base
@@ -86,7 +87,10 @@ module Yarp
     def fetch_with_redirects(uri_str, limit = 10)
       while limit > 0
         begin
-          response = Net::HTTP.get_response(URI(uri_str))
+          uri = URI(uri_str)
+          response = Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == 'https') do |client|
+            client.request(Net::HTTP::Get.new(uri.request_uri))
+          end
         rescue SocketError => e
           Log.error("#{SocketError}: #{e.message}")
           limit  -= 1
@@ -105,16 +109,17 @@ module Yarp
     end
 
     Cache = Yarp::Cache::Tee.new(
-      caches: {
-        memcache: ENV['MEMCACHIER_SERVERS'].empty? ? Yarp::Cache::File.new : Yarp::Cache::Memcache.new,
-        file:     Yarp::Cache::File.new,
-        null:     Yarp::Cache::Null.new
-      },
-      condition: lambda { |key, value|
+      lambda { |key, value|
         value.last.length <= CACHE_THRESHOLD ? 
           ENV['YARP_SMALL_CACHE'].to_sym : 
           ENV['YARP_LARGE_CACHE'].to_sym
-      })
+      },
+      {
+        memcache: ENV['MEMCACHIER_SERVERS'].empty? ? Yarp::Cache::File.new : Yarp::Cache::Memcache.new,
+        file:     Yarp::Cache::File.new,
+        null:     Yarp::Cache::Null.new
+      }
+    )
 
     def cache
       Cache

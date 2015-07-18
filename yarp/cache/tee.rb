@@ -13,7 +13,7 @@ module Yarp::Cache
     # 
     # All symbols listed by the +condition+ must be in the +caches+.
     # 
-    def initialize(condition:nil, caches:nil)
+    def initialize(condition = nil, caches = nil)
       @_caches    = caches
       @_condition = condition
     end

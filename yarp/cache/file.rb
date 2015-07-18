@@ -11,7 +11,7 @@ module Yarp::Cache
     attr_reader :_max_bytes
 
 
-    def initialize(cache_path:nil, max_bytes:nil)
+    def initialize(cache_path = nil, max_bytes = nil)
       @_cache_path = cache_path ? cache_path.to_s : Pathname(ENV['YARP_FILECACHE_PATH'])
       @_max_bytes  = max_bytes  ? max_bytes.to_i  : ENV['YARP_FILECACHE_MAX_BYTES'].to_i
     end
